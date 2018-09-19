@@ -5,6 +5,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.StrictMode;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -20,10 +21,12 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 import static com.example.honguk.IGASDK.HttpPostData;
 import static com.example.honguk.IGASDK.addEvent;
+import static com.example.honguk.IGASDK.getEvent;
 import static com.example.honguk.IGASDK.init;
 import static com.example.honguk.IGASDK.setUserProperty;
 
@@ -55,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
 
         final String method = "get";
 
-        init("phwysl@gmail.com");
+        init(this,"phwysl@gmail.com");
         setUserProperty(new HashMap<String, Object>()
         {
             {
@@ -71,6 +74,7 @@ public class MainActivity extends AppCompatActivity {
         sample_btn.setOnClickListener(new View.OnClickListener()
         {
 
+            @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void onClick(View view)
             {
@@ -92,26 +96,46 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        final String sample2 = "{\"appkey\" : \"appkey(phwysl@gmail.com)\"," +
-                "    \"length\" : 100" +
-                "}";
-
+        final JSONObject get_json = new JSONObject();
+        try {
+            get_json.put("length","100");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
 
         get_btn.setOnClickListener(new View.OnClickListener()
         {
+            @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void onClick(View view)
             {
-                JSONObject get_request_json = null;
+
+
+                String result = "";
+                JSONObject mResult=null;
+
                 try {
-                    get_request_json = new JSONObject(sample2);
+                    mResult = new JSONObject(getEvent(get_json));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
 
 
-                String result = HttpPostData(get_request_json,"get");
+                Iterator<?> keys = mResult.keys();
+                while(keys.hasNext() ) {
+                    String key = (String)keys.next();
+                    try {
+                        result+=key;
+                        result+=" : ";
+                        result+=mResult.getString(key);
+                        result+="\n";
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+                Log.d("json", "onClick: "+mResult.toString());
 
                 sample_textview.setText(result);
 
