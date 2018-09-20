@@ -11,12 +11,30 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+-keep class com.adjust.sdk.** { *; }
 -keep public class com.google.android.gms.ads.** {
 public *;
 }
 
 -keep public class com.google.ads.** {
 public *;
+}
+-keep class com.adjust.sdk.plugin.MacAddressUtil {
+java.lang.String getMacAddress(android.content.Context);
+}
+-keep class com.adjust.sdk.plugin.AndroidIdUtil {
+java.lang.String getAndroidId(android.content.Context);
+}
+-keep class com.google.android.gms.common.ConnectionResult {
+int SUCCESS;
+}
+-keep class com.google.android.gms.ads.identifier.AdvertisingIdClient {
+com.google.android.gms.ads.identifier.AdvertisingIdClient.Info
+getAdvertisingIdInfo (android.content.Context);
+}
+-keep class com.google.android.gms.ads.identifier.AdvertisingIdClient.Info {
+java.lang.String getId ();
+boolean isLimitAdTrackingEnabled();
 }
 
 # Uncomment this to preserve the line number information for
