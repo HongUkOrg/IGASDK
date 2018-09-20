@@ -162,12 +162,15 @@ public class IGASDK
         JSONObject ResultJson = new JSONObject();
 
         JSONObject mJson = new JSONObject();
-        for (Map.Entry<String, Object> entry : hong.entrySet()) {
+        if(hong!=null)
+        {
+            for (Map.Entry<String, Object> entry : hong.entrySet()) {
 
-            String key = entry.getKey();
-            Object value = entry.getValue();
-            mJson.put(key, value);
-            // ...
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                mJson.put(key, value);
+                // ...
+            }
         }
 
         JSONObject evtJson = new JSONObject();

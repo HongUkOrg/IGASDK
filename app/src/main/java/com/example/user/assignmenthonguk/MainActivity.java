@@ -80,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
             {
                 String result = null;
                 try {
-                    result = addEvent("openMenu", new HashMap<String, Object>()
+                    result = addEvent("levelup", new HashMap<String, Object>()
                     {
                         {
                             put("menu_name", "menu1");
