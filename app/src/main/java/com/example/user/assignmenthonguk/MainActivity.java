@@ -114,13 +114,20 @@ public class MainActivity extends AppCompatActivity {
 
                 String result = "";
                 JSONObject mResult=null;
+                String temp = "";
 
                 try {
-                    mResult = new JSONObject(GetEventLog(get_json));
+                    temp = GetEventLog(get_json);
+                    mResult = new JSONObject(temp);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
 
+                if(mResult==null)
+                {
+                    sample_textview.setText(temp);
+                    return;
+                }
 
                 Iterator<?> keys = mResult.keys();
                 while(keys.hasNext() ) {
@@ -135,7 +142,6 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                 }
-                Log.d("json", "onClick: "+mResult.toString());
 
                 sample_textview.setText(result);
 

@@ -42,12 +42,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import static android.content.ContentValues.TAG;
 
 
-public class IGASDK extends AsyncTask<Void, Void, String>{
+
+public class IGASDK
+{
+    public static final String TAG = "IGASDK";
     private static HttpURLConnection http;
-    static String myResult = "fail";
+
 
     public static String key = "";
     public static String birth_day = "";
@@ -60,43 +62,14 @@ public class IGASDK extends AsyncTask<Void, Void, String>{
     private static String adid = "";
     private static boolean ad_state = false;
 
-    @Override
-    protected String doInBackground(final Void... params) {
-        String adId = null;
-        boolean state = false;
-        try {
-            adId = AdvertisingIdClient.getAdvertisingIdInfo(mContext).getId();
-            state = AdvertisingIdClient.getAdvertisingIdInfo(mContext).isLimitAdTrackingEnabled();
 
-            Log.d(TAG, "hello: "+adId+state);
-            ad_state = state;
-        } catch (IllegalStateException ex) {
-            ex.printStackTrace();
-
-        } catch (GooglePlayServicesRepairableException ex) {
-            ex.printStackTrace();
-
-        } catch (IOException ex) {
-            ex.printStackTrace();
-
-        } catch (GooglePlayServicesNotAvailableException ex) {
-            ex.printStackTrace();
-
-        }
-        return adId;
-    }
-
-    @Override
-    protected void onPostExecute(String adId)
-    {
-        adid = adId;
-
-    }
 
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @SuppressLint("WrongConstant")
-    public static String HttpPostData(JSONObject sample, String method) {
+    public static String HttpPostData(JSONObject sample, String method)
+    {
+        String result_from_server = "";
 
         try {
 
@@ -135,16 +108,30 @@ public class IGASDK extends AsyncTask<Void, Void, String>{
             writer.flush();
 
 
+            Log.d(TAG, "HttpPostResult code " +http.getResponseCode());
+
+            if(http.getResponseCode()==http.HTTP_OK)
+            {
+                Log.d(TAG, "Response code : 200 OK ! Success ");
+            }
+            else
+            {
+                return "fail..ResponseCode : "+http.getResponseCode();
+            }
+
+
             InputStreamReader tmp = new InputStreamReader(http.getInputStream(), "UTF-8");
             BufferedReader reader = new BufferedReader(tmp);
             StringBuilder builder = new StringBuilder();
             String str;
 
 
-            while ((str = reader.readLine()) != null) {       // 서버에서 라인단위로 보내줄 것이므로 라인단위로 읽는다
-                builder.append(str + "\n");                     // View에 표시하기 위해 라인 구분자 추가
+
+            while ((str = reader.readLine()) != null) {
+                builder.append(str + "\n");
             }
-            myResult = builder.toString();
+            result_from_server = builder.toString();
+            Log.d(TAG, "Response from server " + result_from_server);
 
         } catch (MalformedURLException e) {
             //
@@ -155,7 +142,7 @@ public class IGASDK extends AsyncTask<Void, Void, String>{
 
         http.disconnect();
 
-        return myResult;
+        return result_from_server;
 
     }
 
@@ -217,7 +204,7 @@ public class IGASDK extends AsyncTask<Void, Void, String>{
         ResultJson.put("common", common);
 
 
-        Log.d("resultJson", ResultJson.toString());
+//        Log.d("resultJson", ResultJson.toString());
 
 
         return HttpPostData(ResultJson, "add");
