@@ -21,8 +21,6 @@ import android.view.WindowManager;
 
 
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
-import com.google.android.gms.ads.identifier.AdvertisingIdClient.Info;
-import com.google.android.gms.auth.GooglePlayServicesAvailabilityException;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 
