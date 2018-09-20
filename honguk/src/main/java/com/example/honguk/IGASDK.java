@@ -2,25 +2,29 @@ package com.example.honguk;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
-import android.util.JsonReader;
 import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
-import android.widget.Toast;
+
+
+import com.google.android.gms.ads.identifier.AdvertisingIdClient;
+import com.google.android.gms.ads.identifier.AdvertisingIdClient.Info;
+import com.google.android.gms.auth.GooglePlayServicesAvailabilityException;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -36,13 +40,14 @@ import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 import static android.content.ContentValues.TAG;
-import static android.support.v4.content.ContextCompat.getSystemService;
 
-public class IGASDK {
+
+public class IGASDK extends AsyncTask<Void, Void, String>{
     private static HttpURLConnection http;
     static String myResult = "fail";
 
@@ -53,7 +58,42 @@ public class IGASDK {
     public static String character_class = "";
     public static String gold = "";
 
-    private static Context mContext=null;
+    private static Context mContext = null;
+    private static String adid = "";
+    private static boolean ad_state = false;
+
+    @Override
+    protected String doInBackground(final Void... params) {
+        String adId = null;
+        boolean state = false;
+        try {
+            adId = AdvertisingIdClient.getAdvertisingIdInfo(mContext).getId();
+            state = AdvertisingIdClient.getAdvertisingIdInfo(mContext).isLimitAdTrackingEnabled();
+
+            Log.d(TAG, "hello: "+adId+state);
+            ad_state = state;
+        } catch (IllegalStateException ex) {
+            ex.printStackTrace();
+
+        } catch (GooglePlayServicesRepairableException ex) {
+            ex.printStackTrace();
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+
+        } catch (GooglePlayServicesNotAvailableException ex) {
+            ex.printStackTrace();
+
+        }
+        return adId;
+    }
+
+    @Override
+    protected void onPostExecute(String adId)
+    {
+        adid = adId;
+
+    }
 
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -122,10 +162,9 @@ public class IGASDK {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    public static String getEvent(JSONObject hong) throws JSONException
-    {
-        String app_key = "appkey("+key+")";
-        hong.put("appkey",app_key);
+    public static String GetEventLog(JSONObject hong) throws JSONException {
+        String app_key = "appkey(" + key + ")";
+        hong.put("appkey", app_key);
 
         return HttpPostData(hong, "get");
 
@@ -153,12 +192,9 @@ public class IGASDK {
 
         evtJson.put("created_at", current);
         evtJson.put("event", eventName);
-        if(get_mylocation()==null)
-        {
+        if (get_mylocation() == null) {
             evtJson.put("location", null);
-        }
-        else
-            {
+        } else {
             evtJson.put("location", get_mylocation());
         }
         evtJson.put("param", mJson);
@@ -177,7 +213,7 @@ public class IGASDK {
 
 
         JSONObject common = new JSONObject();
-        common=getCommonJson();
+        common = getCommonJson();
 
 
         ResultJson.put("common", common);
@@ -191,10 +227,25 @@ public class IGASDK {
 
     }
 
-    public static void init(Context context,String appkey) {
+    public static void init(Context context, String appkey) {
 
         key = appkey;
         mContext = context;
+        AsyncTask.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    AdvertisingIdClient.Info adInfo = AdvertisingIdClient.getAdvertisingIdInfo(mContext);
+                    adid = adInfo != null ? adInfo.getId() : null;
+                    ad_state = adInfo != null? adInfo.isLimitAdTrackingEnabled() : null;
+
+                    Log.d(TAG, "andinfo " + adid + " "+ ad_state);
+                    // Use the advertising id
+                } catch (IOException | GooglePlayServicesRepairableException | GooglePlayServicesNotAvailableException exception) {
+                    // Error handling if needed
+                }
+            }
+        });
     }
 
     public static void setUserProperty(Map<String, Object> keyvalue) {
@@ -208,81 +259,61 @@ public class IGASDK {
 
     public static JSONObject get_mylocation() throws JSONException {
         LocationManager lm = (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
-        if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return null;
+        List<String> providers = lm.getProviders(true);
+        Location bestLocation = null;
+        for (String provider : providers) {
+            if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return null;
+            }
+            Location l = lm.getLastKnownLocation(provider);
+
+
+            if (l == null) {
+                continue;
+            }
+            if (bestLocation == null
+                    || l.getAccuracy() < bestLocation.getAccuracy()) {
+
+                bestLocation = l;
+            }
         }
-        double latitude=0;
-        double longitude=0;
-        assert lm != null;
-        Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        if(location != null)
+        if (bestLocation == null) 
         {
-            longitude = location.getLongitude();
-            latitude = location.getLatitude();
-        }
-        if(latitude==0&&longitude==0)
-        {
+            Log.d(TAG, "get_mylocation: best location null");
             return null;
         }
 
+
         JSONObject myLoc = new JSONObject();
-        myLoc.put("lat",latitude);
-        myLoc.put("lng",longitude);
+        myLoc.put("lat",Double.toString(bestLocation.getLatitude()));
+        myLoc.put("lng",Double.toString(bestLocation.getLongitude()));
 
         return myLoc;
     }
 
     public static JSONObject getCommonJson() throws JSONException {
         JSONObject commonJson = new JSONObject();
+        JSONObject device_info_json = new JSONObject();
+
+        final JSONObject identity_json = new JSONObject();
+
+        identity_json.put("adid",adid);
+        identity_json.put("adid_opt_out",ad_state);
+        commonJson.put("identity",identity_json);
 
 
-        commonJson.put("package_name", mContext.getPackageName());
-        commonJson.put("language",mContext.getResources().getConfiguration().locale.getLanguage());
-        commonJson.put("country",Locale.getDefault().getCountry());
-
-        TelephonyManager manager = (TelephonyManager)mContext.getSystemService(Context.TELEPHONY_SERVICE);
-        String carrierName = manager.getNetworkOperatorName();
-
-        commonJson.put("carrier",carrierName);
-
-        ConnectivityManager cm =  (ConnectivityManager)mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-
-        if (activeNetwork != null) {
-            if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI)
-            {
-                commonJson.put("network","WIFI");
-            }
-            else if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE)
-            {
-                commonJson.put("network","mobile_data");
-            }
-        }
-        else
-        {
-
-            commonJson.put("network","not_connected");
-        }
         String release = Build.VERSION.RELEASE;
-        commonJson.put("os",release);
-        commonJson.put("model",Build.MODEL);
+        device_info_json.put("os",release);
+        device_info_json.put("model",Build.MODEL);
 
 
-        if(mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT){
-            commonJson.put("is_portrait","true");
-        }
-        else
-        {
-            commonJson.put("is_portrait","false");
-        }
-        commonJson.put("platform","android");
 
         WindowManager wm = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
         Display display = wm.getDefaultDisplay();
@@ -290,15 +321,60 @@ public class IGASDK {
         display.getMetrics(metrics);
         int width = metrics.widthPixels;
         int height = metrics.heightPixels;
+        device_info_json.put("resolution",width+"x"+height);
 
-        commonJson.put("resolution",width+"x"+height);
 
+        if(mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT){
+            device_info_json.put("is_portrait","true");
+        }
+        else
+        {
+            device_info_json.put("is_portrait","false");
+        }
+        device_info_json.put("platform","android");
+        ConnectivityManager cm =  (ConnectivityManager)mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        if (activeNetwork != null) {
+            if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI)
+            {
+                device_info_json.put("network","WIFI");
+            }
+            else if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE)
+            {
+                device_info_json.put("network","mobile_data");
+            }
+        }
+        else
+        {
+
+            device_info_json.put("network","not_connected");
+        }
+        TelephonyManager manager = (TelephonyManager)mContext.getSystemService(Context.TELEPHONY_SERVICE);
+        String carrierName = manager.getNetworkOperatorName();
+        device_info_json.put("carrier",carrierName);
+        device_info_json.put("language",mContext.getResources().getConfiguration().locale.getLanguage());
+        device_info_json.put("country",Locale.getDefault().getCountry());
+
+
+
+
+
+
+        commonJson.put("device_info",device_info_json);
+
+
+        commonJson.put("package_name", mContext.getPackageName());
         String app_key = "appkey(" + key + ")";
         commonJson.put("appkey", app_key);
+
+
+
+
 
         return commonJson;
 
     }
+
 
 
     // HttpPostData

@@ -26,7 +26,7 @@ import java.util.List;
 
 import static com.example.honguk.IGASDK.HttpPostData;
 import static com.example.honguk.IGASDK.addEvent;
-import static com.example.honguk.IGASDK.getEvent;
+import static com.example.honguk.IGASDK.GetEventLog;
 import static com.example.honguk.IGASDK.init;
 import static com.example.honguk.IGASDK.setUserProperty;
 
@@ -116,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
                 JSONObject mResult=null;
 
                 try {
-                    mResult = new JSONObject(getEvent(get_json));
+                    mResult = new JSONObject(GetEventLog(get_json));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
