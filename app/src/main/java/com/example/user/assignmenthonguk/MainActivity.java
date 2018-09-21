@@ -16,6 +16,8 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.honguk.IGASDK;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -80,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
             {
                 String result = null;
                 try {
-                    result = addEvent("levelup", new HashMap<String, Object>()
+                    result = IGASDK.addEvent("levelup", new HashMap<String, Object>()
                     {
                         {
                             put("menu_name", "menu1");
@@ -117,7 +119,13 @@ public class MainActivity extends AppCompatActivity {
                 String temp = "";
 
                 try {
-                    temp = GetEventLog(get_json);
+                    temp = IGASDK.GetEventLog(new HashMap<String, Object>()
+                    {
+                        {
+                            put("appkey","appkey(phwysl@gmail.com)");
+                            put("length",100);
+                        }
+                    });
                     mResult = new JSONObject(temp);
                 } catch (JSONException e) {
                     e.printStackTrace();

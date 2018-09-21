@@ -38,6 +38,7 @@ import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -147,11 +148,24 @@ public class IGASDK
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    public static String GetEventLog(JSONObject hong) throws JSONException {
-        String app_key = "appkey(" + key + ")";
-        hong.put("appkey", app_key);
+    public static String GetEventLog(HashMap<String,Object> hong) throws JSONException {
 
-        return HttpPostData(hong, "get");
+
+        JSONObject mJson = new JSONObject();
+        if(hong!=null)
+        {
+            for (Map.Entry<String, Object> entry : hong.entrySet()) {
+
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                mJson.put(key, value);
+                // ...
+            }
+        }
+
+
+
+        return HttpPostData(mJson, "get");
 
 
     }
